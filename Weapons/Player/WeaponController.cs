@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
 public class WeaponController : MonoBehaviour
 {
 	public enum Weapons { Cannon, Missile, Napalm, Weapon_4 };
@@ -24,8 +23,8 @@ public class WeaponController : MonoBehaviour
 	[System.Serializable]
 	public class Missile
 	{
-		public GameObject missilePrefab = null;
 		public List<Transform> missilePositions  = new List<Transform>();
+		public GameObject missilePrefab = null;
 		public float missileCooldown             = 1.0f;
 		public float missileThreshold            = 0.4f;
 		public List<float> missileCooldownTimers = null;
@@ -37,8 +36,8 @@ public class WeaponController : MonoBehaviour
 	[System.Serializable]
 	public class Napalm
 	{
-		public GameObject bombPrefab  = null;
 		public Transform bombSpawnPos = null;
+		public GameObject bombPrefab  = null;
 	}
 	public Napalm napalmConfig = null;
 
@@ -46,7 +45,6 @@ public class WeaponController : MonoBehaviour
 	float cannonCooldownTimer = 0.0f;
 	int currentMuzzleIndex    = 0;
 	float isFiring            = 0.0f;
-
 	public float GetMissileSpeed() { return missileConfig.maxSpeed; }
 	public Vector3 GetConvergencePoint() { return convergencePoint; }
 	private void Start()
@@ -57,6 +55,7 @@ public class WeaponController : MonoBehaviour
 
 	private void Update()
 	{
+
 		UpdateConvergencePoint();
 
 		switch (activeWeapon)
@@ -71,6 +70,8 @@ public class WeaponController : MonoBehaviour
 				HandleBomb();
 				break;
 		}
+
+
 	}
 
 	private void HandleCannon()

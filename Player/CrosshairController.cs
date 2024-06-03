@@ -3,12 +3,11 @@ using UnityEngine;
 public class CrosshairController : MonoBehaviour
 {
 	TargetingController targetFinder         = null;
-	RectTransform crosshair                  = null;
+	WeaponController    weaponController     = null;
+	RectTransform       crosshair            = null;
 
-	[SerializeField] float viewportThreshold = 0.1f;
-	[SerializeField] bool leadingReticle     = false;
-	[SerializeField] float bulletSpeed       = 5f;
-	WeaponController weaponController        = null;
+	[SerializeField] private float viewportThreshold = 0.1f;
+	[SerializeField] private bool  leadingReticle    = false;
 
 	private void Start()
 	{
@@ -42,9 +41,9 @@ public class CrosshairController : MonoBehaviour
 		}
 
 		Vector3 convergencePoint = weaponController.GetConvergencePoint();
-		Vector3 screenPoint = Camera.main.WorldToScreenPoint(convergencePoint);
+		Vector3 screenPoint      = Camera.main.WorldToScreenPoint(convergencePoint);
+		screenPoint.z            = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
-		screenPoint.z = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
 		if (!leadingReticle)
 		{
@@ -63,7 +62,7 @@ public class CrosshairController : MonoBehaviour
 			else
 			{
 
-				Vector3 targetPos = target.transform.position;
+				Vector3 targetPos     = target.transform.position;
 				Vector3 viewportPoint = Camera.main.WorldToViewportPoint(targetPos);
 
 				if (targetFinder.IsInViewport(viewportPoint, viewportThreshold))
@@ -71,12 +70,12 @@ public class CrosshairController : MonoBehaviour
 					var leadPos = TargetingController.InterceptLead(
 						weaponController.gameObject.transform.position,
 						weaponController.gameObject.GetComponent<Rigidbody>().velocity,
-						bulletSpeed,
+						weaponController.cannonConfig.projectileSpeed,
 						targetPos,
 						target.GetComponent<Rigidbody>().velocity
 					);
-					Vector3 leadPoint = Camera.main.WorldToScreenPoint(leadPos);
-					leadPoint.z = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
+					Vector3 leadPoint  = Camera.main.WorldToScreenPoint(leadPos);
+					leadPoint.z        = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
 					crosshair.position = leadPoint;
 				}
 				else
@@ -98,9 +97,9 @@ public class CrosshairController : MonoBehaviour
 		}
 
 		Vector3 convergencePoint = weaponController.GetConvergencePoint();
-		Vector3 screenPoint = Camera.main.WorldToScreenPoint(convergencePoint);
+		Vector3 screenPoint      = Camera.main.WorldToScreenPoint(convergencePoint);
+		screenPoint.z            = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
-		screenPoint.z = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
 		if (!leadingReticle)
 		{
@@ -117,14 +116,14 @@ public class CrosshairController : MonoBehaviour
 				return;
 			}
 
-			Vector3 targetPos = target.transform.position;
+			Vector3 targetPos     = target.transform.position;
 			Vector3 viewportPoint = Camera.main.WorldToViewportPoint(targetPos);
 
 			if (targetFinder.IsInViewport(viewportPoint, viewportThreshold))
 			{
 
-				Vector3 leadPoint = Camera.main.WorldToScreenPoint(targetPos);
-				leadPoint.z = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
+				Vector3 leadPoint  = Camera.main.WorldToScreenPoint(targetPos);
+				leadPoint.z        = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
 				crosshair.position = leadPoint;
 			}
 			else
