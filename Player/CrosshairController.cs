@@ -1,37 +1,33 @@
+using System.Net;
 using UnityEngine;
 
 public class CrosshairController : MonoBehaviour
 {
-	TargetingController targetFinder         = null;
-	WeaponController    weaponController     = null;
-	RectTransform       crosshair            = null;
+	WeaponController weaponController = null;
+	RectTransform crosshair = null;
 
 	[SerializeField] private float viewportThreshold = 0.1f;
-	[SerializeField] private bool  leadingReticle    = false;
+	[SerializeField] private bool leadingReticle = false;
+	[SerializeField] private float lerpSpeed = 5.0f;
 
 	private void Start()
 	{
 		crosshair = GetComponent<RectTransform>();
+		weaponController = InputHandler.Instance.GetComponent<WeaponController>();
 	}
 
 	void FixedUpdate()
 	{
-		if( weaponController != null )
+		if (weaponController != null)
 		{
-		if (weaponController.activeWeapon == WeaponController.Weapons.Cannon)
-			CannonCrosshair();
-		else if (weaponController.activeWeapon == WeaponController.Weapons.Missile)
-			MissileCrosshair();
-		}
-		else
-			weaponController = GameObject.FindGameObjectWithTag("Player").GetComponentInParent<WeaponController>();
-		if(targetFinder == null )
-		{
-			targetFinder = GameObject.FindGameObjectWithTag("Player").GetComponentInParent<TargetingController>();
-
+			if (weaponController.activeWeapon == WeaponController.Weapons.Cannon)
+				CannonCrosshair();
+			else if (weaponController.activeWeapon == WeaponController.Weapons.Missile)
+				MissileCrosshair();
+			else if (weaponController.activeWeapon == WeaponController.Weapons.Bomb)
+				BombingCrosshair();
 		}
 	}
-
 	private void CannonCrosshair()
 	{
 		if (weaponController == null)
@@ -41,50 +37,49 @@ public class CrosshairController : MonoBehaviour
 		}
 
 		Vector3 convergencePoint = weaponController.GetConvergencePoint();
-		Vector3 screenPoint      = Camera.main.WorldToScreenPoint(convergencePoint);
-		screenPoint.z            = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
+		Vector3 screenPoint = Camera.main.WorldToScreenPoint(convergencePoint);
+		screenPoint.z = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
+		Vector3 targetPosition = screenPoint;
 
-		if (!leadingReticle)
+		if (leadingReticle && TargetingController.Instance != null)
 		{
-			crosshair.position = screenPoint;
-			return;
-		}
-		if (targetFinder != null)
-		{
-			GameObject target = targetFinder.GetTargetInRange(weaponController.cannonConfig.convergenceDistance, viewportThreshold);
-
-			if (target == null)
+			GameObject target = TargetingController.Instance.GetTargetInRange(weaponController.transform.position, weaponController.cannonConfig.convergenceDistance, viewportThreshold);
+			if (target != null)
 			{
-				crosshair.position = screenPoint;
-				return;
-			}
-			else
-			{
-
-				Vector3 targetPos     = target.transform.position;
+				Vector3 targetPos = target.transform.position;
 				Vector3 viewportPoint = Camera.main.WorldToViewportPoint(targetPos);
 
-				if (targetFinder.IsInViewport(viewportPoint, viewportThreshold))
+				Rigidbody targetRigidbody = target.GetComponent<Rigidbody>();
+
+				if (TargetingController.Instance.IsInViewport(viewportPoint, viewportThreshold))
 				{
-					var leadPos = TargetingController.InterceptLead(
-						weaponController.gameObject.transform.position,
-						weaponController.gameObject.GetComponent<Rigidbody>().velocity,
-						weaponController.cannonConfig.projectileSpeed,
-						targetPos,
-						target.GetComponent<Rigidbody>().velocity
-					);
-					Vector3 leadPoint  = Camera.main.WorldToScreenPoint(leadPos);
-					leadPoint.z        = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
-					crosshair.position = leadPoint;
-				}
-				else
-				{
-					crosshair.position = screenPoint;
+
+					if (!targetRigidbody)
+					{
+						targetPosition = Camera.main.WorldToScreenPoint(targetPos);
+					}
+					else
+					{
+						Vector3 leadPos = TargetingController.InterceptLead(
+							weaponController.transform.position,
+							weaponController.GetComponent<Rigidbody>().velocity,
+							weaponController.cannonConfig.maxSpeed,
+							targetPos,
+							targetRigidbody.velocity
+						);
+
+						targetPosition = Camera.main.WorldToScreenPoint(leadPos);
+					}
+
+					targetPosition.z = Mathf.Clamp(targetPosition.z, 0.0f, 1000.0f);
 				}
 			}
 		}
 
+
+			crosshair.position = Vector3.Lerp(crosshair.position, targetPosition, Time.deltaTime * lerpSpeed);
+		
 
 	}
 
@@ -97,39 +92,38 @@ public class CrosshairController : MonoBehaviour
 		}
 
 		Vector3 convergencePoint = weaponController.GetConvergencePoint();
-		Vector3 screenPoint      = Camera.main.WorldToScreenPoint(convergencePoint);
-		screenPoint.z            = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
+		Vector3 screenPoint = Camera.main.WorldToScreenPoint(convergencePoint);
+		screenPoint.z = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
 
+		Vector3 targetPosition = screenPoint;
 
-		if (!leadingReticle)
+		if (leadingReticle && TargetingController.Instance != null)
 		{
-			crosshair.position = screenPoint;
-			return;
-		}
-		if (targetFinder != null)
-		{
-
-			GameObject target = targetFinder.GetTargetInRange(weaponController.cannonConfig.convergenceDistance * 2.0f, viewportThreshold);
-			if (target == null)
+			GameObject target = TargetingController.Instance.GetTargetInRange(weaponController.transform.position, weaponController.cannonConfig.convergenceDistance * 2.0f, viewportThreshold);
+			if (target != null)
 			{
-				crosshair.position = screenPoint;
-				return;
-			}
+				Vector3 targetPos = target.transform.position;
+				Vector3 viewportPoint = Camera.main.WorldToViewportPoint(targetPos);
 
-			Vector3 targetPos     = target.transform.position;
-			Vector3 viewportPoint = Camera.main.WorldToViewportPoint(targetPos);
+				if (TargetingController.Instance.IsInViewport(viewportPoint, viewportThreshold))
+				{
+					targetPosition = Camera.main.WorldToScreenPoint(targetPos);
 
-			if (targetFinder.IsInViewport(viewportPoint, viewportThreshold))
-			{
-
-				Vector3 leadPoint  = Camera.main.WorldToScreenPoint(targetPos);
-				leadPoint.z        = Mathf.Clamp(leadPoint.z, 0.0f, 1000.0f);
-				crosshair.position = leadPoint;
-			}
-			else
-			{
-				crosshair.position = screenPoint;
+					targetPosition.z = Mathf.Clamp(targetPosition.z, 0.0f, 1000.0f);
+				}
 			}
 		}
+
+		crosshair.position = Vector3.Lerp(crosshair.position, targetPosition, Time.deltaTime * lerpSpeed);
+	}
+
+
+	private void BombingCrosshair()
+	{
+		Vector3 convergencePoint = weaponController.GetConvergencePoint();
+		Vector3 screenPoint = Camera.main.WorldToScreenPoint(convergencePoint);
+		screenPoint.z = Mathf.Clamp(screenPoint.z, 0.0f, 1000.0f);
+
+		crosshair.position = Vector3.Lerp(crosshair.position, screenPoint, Time.deltaTime * lerpSpeed);
 	}
 }
